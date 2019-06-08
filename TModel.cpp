@@ -1,0 +1,792 @@
+#include <TModel.hpp>
+#include <string>
+#include <cassert>
+
+#define PI      (float) 3.1415926535897932384626433832795
+#define PI2     (float) 2.0f*PI
+#define SQRT2PI (float) sqrt(PI2)
+#define ERROR   (double) 1E-10
+
+//#define getParam()->decelearation 10
+
+//Calcular o horizonte de observação. Ou seja, quanto tempo o Follower leva para
+//atingir o Leader. Carros fora do horizonte, aplicar regra padrão. Caso contrário,
+//aplicar regra de desaceleração.
+
+using namespace std;
+
+TModel::TModel():
+mRedLights(NULL),
+mClusters(NULL),
+mReAjusted(0),
+mLastVehicles(NULL){
+     srand ( time(NULL) );
+}
+TModel::~TModel(){}
+
+void TModel::finalizer(void){
+  if (mLastVehicles != NULL)
+    free(mLastVehicles);
+
+  getGrid()->finalize();
+
+}
+
+void TModel::addONEObstables(void){
+    Obstacle *obstacle = new Obstacle();
+
+    obstacle->ID = getGrid()->getID();
+
+    obstacle->x  = mParam->cellX - 1;
+    obstacle->y  = mParam->cellY - 1;
+    obstacle->lg = 1;
+    getGrid()->addEntity(obstacle);
+
+}
+
+void TModel::initialCondition(float dGlobal){
+    //Define how many vehicles will be on the road
+    Vehicle vehicle;
+/*
+ * Observation 2017, March 18th
+ * For each vehicle Verifying if it is in a list of log vehicles vehicleLog
+ * To do this: Verifying if there is a substring with the number.
+ *             Set true vehicle parameter
+ *             Put in Vehicle.cpp code to log the vehicle performance
+ *
+ */
+    int totalVehicles = 0,
+        *vehiclesTypes = new int[getGrid()->getVehiclesTypeSize()];
+    mStatistic = false;
+
+    for (int i = 0; i < getGrid()->getVehiclesTypeSize(); i++){
+        tpVehiclesType *type  = getGrid()->getVehicleType(i);
+
+        float dVehicle  = type->percent * dGlobal / static_cast<float> (type->size);
+
+        int   nVehicles = static_cast <int> (dVehicle * static_cast <float> (mParam->cellX));
+
+        if (nVehicles == 0) nVehicles = 1;
+
+        totalVehicles += nVehicles;
+
+        vehiclesTypes[i] = nVehicles;
+    }
+    totalVehicles *= mParam->cellY;
+
+    getGrid()->clearMemories();
+
+    if (mParam->logVehicles > 0)
+      assert(posix_memalign((void**) &mLastVehicles, ALIGN, mParam->logVehicles *  sizeof(Vehicle*)) == 0);
+
+    int lIndex = 0;
+    for (int road = 0; road < mParam->cellY; road++){
+        int cell = 0;
+        for (int i = 0; i < getGrid()->getVehiclesTypeSize(); i++){
+            tpVehiclesType *type  = getGrid()->getVehicleType(i);
+            int length    = type->size;
+            int nVehicles = vehiclesTypes[i];
+            for(int iveicles = 0; iveicles < nVehicles; iveicles++){
+                Vehicle *vehicle = new Vehicle();
+
+                vehicle->ID = getGrid()->getID();
+
+                vehicle->x = cell + length - 1;
+                vehicle->vx = 0;
+                vehicle->vxNew = 0;
+                vehicle->y = road;
+                vehicle->vy = 0;
+                vehicle->yChange = false;
+                vehicle->mLights = false;
+                vehicle->lg = type->size;
+                vehicle->myDensity = dGlobal;
+                vehicle->mSensor = this->getSensor();
+                vehicle->next = NULL;
+                vehicle->prev = NULL;
+                vehicle->type = getGrid()->getVehicleType(i);
+                vehicle->defineLattice(mParam->cellX, mParam->cellY);
+                vehicle->save = false;
+                vehicle->mDV = 0;
+                vehicle->mDIST = 0;
+                vehicle->setFileSufix(mParam->modelName);
+                if (mParam->logVehicles > 0){
+                  if (iveicles >= (nVehicles - mParam->logVehicles)){
+                      vehicle->save = true;
+                      mLastVehicles[lIndex++] = vehicle;
+
+                  }//end-if (iveicles == (nVehicles - 1 - mParam->logVehicles)){
+                }//end-                if (mParam->logVehicles > 0){
+
+                getGrid()->addEntity(vehicle);
+                cell += length;
+
+            }
+
+        }
+    }
+
+
+    delete[] vehiclesTypes;
+    vehiclesTypes = NULL;
+
+
+    //Setting up sensor
+    mSensor->setFileName(mParam->modelName);
+    mSensor->setGrid(this->getGrid());
+    mSensor->reset();
+
+
+    mReAjusted = 0;
+
+
+
+}
+
+void TModel::finalCondition(void){
+
+   string fileName = "";
+   fstream log;
+   unsigned int nVehicles = 0;
+   Entity *e = getGrid()->getEntities();
+   int iOcc = 0;
+   while (e != NULL){
+      if (e->whoAmI().compare("Vehicle") == 0){
+         nVehicles++;
+         iOcc += e->lg;
+      }
+
+      e = e->next;
+   }
+
+   double percent = static_cast<double> (mReAjusted) /  static_cast<double>(getParam()->sTime - getParam()->dTime);
+   if (nVehicles > 0)
+      percent = percent / static_cast<double> (nVehicles) ;
+
+   double occupation = static_cast<double>(iOcc) / static_cast<double>(getParam()->cellX * getParam()->cellY);
+
+   if (getParam()->logCluster){
+
+      fileName = mPath + "cluster.adjusted." + getParam()->modelName + ".txt";
+      log.open(fileName, fstream::out | fstream::app);
+      assert(log.is_open());
+
+
+
+      log << fixed << setw(10) << setprecision(5) << occupation << " " << setw(10) << (getParam()->sTime - getParam()->dTime) << " " << setw(10) << mReAjusted;
+      log << fixed << setw(10) << setprecision(5) <<  percent <<  endl;
+
+      log.close();
+
+
+   }
+
+
+}
+
+
+void TModel::applyRules(int step,  bool changing){
+
+
+
+    Entity *ptr = getGrid()->getEntities();
+
+    //Applying movement rules
+    while (ptr != NULL){
+        executeRules(ptr);
+        ptr = ptr->next;
+    }
+
+
+    do{
+         tpCluster *list = NULL;
+         Vehicle *vehicle = NULL;
+
+
+        // sprintf(line, "\t<mRedLights> %p </mRedLights>", mRedLights);
+
+         while (mRedLights != NULL){
+            list = mRedLights;
+            vehicle = list->vehicle;
+            vehicle->mLights = false;
+
+
+
+            buildCluster(vehicle);
+            mRedLights = mRedLights->next;
+            delete list;
+            list = NULL;
+         }//end-if (list != NULL){
+
+         list = NULL;
+         vehicle = NULL;
+
+
+         while (mClusters != NULL){
+            list = mClusters;
+            vehicle = list->vehicle;
+            solveCluster(vehicle);
+            mClusters = mClusters->next;
+            delete list;
+            list = NULL;
+         }
+
+
+    }while(mRedLights != NULL);
+
+
+
+
+   update(step,  changing);
+
+
+
+}
+
+
+void TModel::update(int step,  bool changing, bool initial){
+
+   std::fstream output;
+
+   //Updating all vehicles
+   bool  statistic = (step > getParam()->dTime) ;
+   getGrid()->clearGrid();
+
+
+    Entity *pEntity = getGrid()->getEntities();
+    while (pEntity != NULL){
+
+
+      if (pEntity->whoAmI().compare("Vehicle") == 0){
+         if ((step % getParam()->stTime) == 0){//Whether save statistic time step, clear
+            pEntity->clear();
+
+         }
+
+         Vehicle **ppVehicle = (Vehicle**) (&pEntity);
+//-----------------------------------------------------------------------------
+         assert(ppVehicle != NULL);
+         if (!initial){
+            if (changing)
+            (*ppVehicle)->updateY(statistic, step);
+            else{
+                (*ppVehicle)->update(statistic, step);
+
+
+            }
+         }
+
+
+
+         int y = pEntity->y;
+         for (int k = 0 ; k <   pEntity->lg; k++){
+            int x  =  pEntity->x - k;
+            if (x < 0)
+               x = getParam()->cellX + x;
+
+           // assert(!changing);
+
+            if ((getGrid()->getGrid(x, y) != EMPTY) && (!changing)){
+               std::cerr << "\t [ERROR] " << __FILE__ << " at " << __LINE__ << "\t Time:" << step <<  std::endl ;
+
+               Vehicle *v = static_cast<Vehicle*>(pEntity) ; //getGrid()->getGrid(x, y));
+
+               // v.mBreakForeseenForeseenLight = true;
+               std::cerr << "V1(ID= " << v->ID << ",X= "
+               <<  v->x  << ",Y= "
+               <<  v->y  << ", VX="
+               <<  v->vx << ", VNEW="
+               <<  v->vxNew <<  ")" << std::endl;
+
+
+               v = static_cast<Vehicle*>(getGrid()->getGrid(x, y));
+               std::cerr << "V2(ID= " <<  v->ID << ",X= "
+               <<  v->x  << ",Y= "
+               <<  v->y  << ", VX="
+               <<  v->vx << ", VNEW="
+               <<  v->vxNew << ")" << std::endl;
+               exit(-1);
+
+            }
+
+            getGrid()->setGrid(x, y, pEntity);
+
+         }//end-for (int k = 0 ; k <  static_cast <int> ( pVehicle->lg); k++){
+//-----------------------------------------------------------------------------
+      }else  if (pEntity->whoAmI().compare("Obstacle") == 0){//end-      if (pEntity->whoAmI().compare("Vehicle") == 0){
+            int y = pEntity->y;
+            for (int k = 0 ; k <   pEntity->lg; k++){
+                int x  =  pEntity->x - k;
+                if (x < 0)
+                    x = getParam()->cellX + x;
+
+                getGrid()->setGrid(x, y, pEntity);
+            }
+      }
+      pEntity = pEntity->next;
+    }//while (pEntity != NULL){
+
+
+
+
+   if ((!changing) && (step > 0)){
+      //Verifying if there is vehicle stopped on moviment detector cell.
+      if (statistic){
+         for (int j = 0; j < getParam()->cellY; j++){
+
+            Entity *e = getGrid()->getGrid(getParam()->cellX-1, j);
+            if (e != NULL){
+               if (e->whoAmI().compare("Vehicle") == 0){
+                  Vehicle *v = reinterpret_cast<Vehicle*> (e);
+                  if (v->vx == 0)
+                     getSensor()->setCellInStopped(j);
+               }
+
+            }
+
+
+
+         }//end- for (int j = 0; j < mRules->getParam()->cellY; j++){
+
+         this->getSensor()->update();
+         if ((step % getParam()->stTime) == 0){
+
+            getSensor()->saveStatistic(step);
+
+
+         }
+
+
+//--------------------------------------------------
+//After updating all vehicles velocity, the model logs vehicles
+  if (mParam->logVehicles > 0){
+    for (int i = 0; i < mParam->logVehicles; i++){
+      Vehicle *v =   mLastVehicles[i];
+      int iAheadVel = 0,
+          iDist     = 0;
+
+      getDistanceAndVelocity(v, &iDist, &iAheadVel, NULL);
+
+      v->mDV = v->vx - iAheadVel;
+      v->mDIST = iDist;
+
+
+      v->log();
+    }
+  }
+
+//--------------------------------------------------
+      }//end- if (statistic){
+   }//end- if ((!changing) && (step > 0)){
+}
+
+void TModel::executeRules(Entity *entity, bool changing){
+
+   if (entity->whoAmI().compare("Vehicle") == 0){
+       movementRules(static_cast<Vehicle *> (entity));
+   }
+
+}
+
+int TModel::decelerationRule(int iDist,
+			                 int iAheadVel,
+			                 int iVel){
+
+      double d = 2.0f * static_cast<double> (iDist);
+      double vl =  static_cast<double>(iAheadVel);
+      double vf =  static_cast<double>(iVel);
+      double acc = ((vf * vf) - (vl * vl)) / d;
+      //AQUI
+
+      if (acc < 0.1f)
+         return 0;
+
+      if (acc > getParam()->deceleration)
+         acc = getParam()->deceleration;
+
+      return truncCurve3(acc);
+
+}
+
+void TModel::movementRules(Vehicle *pVehicle, bool isCluster){
+   int iVel = 0,
+       iDist = 0,
+       iAheadVel = 0,
+       iOldV = 0;
+
+   Vehicle **ppVehicle  = &pVehicle;
+   tpVehiclesType *type = (*ppVehicle)->type;
+
+  // double   alpha = (1.0f - betaFunction(type->param));
+   double   alpha = betaFunction(type->param);
+
+
+
+   getDistanceAndVelocity(pVehicle, &iDist, &iAheadVel, isCluster);
+
+                                                                                 int myDistance = iDist;
+
+
+   double dAheadVel = static_cast<double> (iAheadVel) * alpha;
+   //iDist += iAheadVel;
+   iDist += truncCurve3(dAheadVel);
+
+   bool breaking = false;
+
+   if (!isCluster){
+      iVel = (*ppVehicle)->vx;
+      iOldV = iVel;
+      double acc = type->inc * alpha;
+      int DV = (iVel - iAheadVel);
+      double dVel = static_cast <double> (iOldV);
+      double dDist = static_cast <double> (myDistance) * 1.0f; //alpha;
+
+
+
+
+
+
+      if ( (dDist <= (getParam()->spacePerception * dVel)) && (DV > 0)){
+
+            int dAcc = decelerationRule(myDistance, iAheadVel, iVel);
+            assert(dAcc <= getParam()->deceleration);
+            iVel = iVel - dAcc;
+
+
+
+           breaking = true;
+       }else{
+        //Free flow rule
+        iVel += (truncCurve3(acc) - type->desc);
+     }
+
+      iVel = max(iVel, 0);
+      iVel = min (iVel,  min(mParam->vMax, (*ppVehicle)->type->vMax));
+   }
+   else{
+       iOldV = iVel;
+       iVel = (*ppVehicle)->vxNew;
+       int DV = (iVel - iAheadVel);
+
+       if ((iDist > 0) && (DV > 0)){
+
+           int dAcc = decelerationRule(myDistance, iAheadVel, iVel);
+           assert(dAcc <= getParam()->deceleration);
+
+
+           iVel = (*ppVehicle)->vxNew - dAcc;
+
+           iVel = max(iVel, 0);
+           breaking = true;
+       }//end-if (iDist >0){
+   }
+
+   if (iVel > iDist){
+      iVel = iDist;
+      breaking = true;
+   }
+
+   if ((iVel < iOldV) && (!breaking))
+      breaking = true;
+
+   (*ppVehicle)->mLights =  breaking;
+
+   if (breaking){
+      insertIntoRedLights(pVehicle);
+   }
+
+   (*ppVehicle)->vxNew = iVel;
+
+}
+
+
+
+void TModel::getDistanceAndVelocity(Vehicle *v, int *dist, int *vel, bool rule){
+   //rule == true then solve cluster
+   //otherwise movement rule
+   //tpVehiclesType *type = getGrid()->getVehicles(idx).type;
+
+   int x = v->x,
+       y = v->y,
+       iDist = 0;
+   Entity *cell = NULL;
+
+   do
+   {
+      x++;
+      iDist++;
+      if (x == mParam->cellX)
+         x = 0;
+      cell = getGrid()->getGrid(x, y);
+
+   } while (cell == EMPTY); //((cell == EMPTY) && (iDist <= mParam->vMax));
+
+   //if (iDist >= mParam->vMax   ){
+     //    *vel = 0; //Significa que nao tem veiculo
+
+   //}else{
+
+         if (cell->whoAmI().compare("Vehicle") == 0){
+            Vehicle *v = static_cast<Vehicle *> (cell);
+            if (!rule){
+                *vel = v->vx;
+
+            }else{
+
+               *vel = v->vxNew;
+
+
+            }
+
+         }else{
+            *vel = 0;
+
+
+         }
+
+  // }
+
+
+   iDist--;
+   if (iDist < 0)
+      iDist = 0;
+
+   *dist = iDist;
+
+}
+
+Entity * TModel::getBack(int *out,
+                          int myX,
+                          int myY,
+                          int myLg){
+
+   int x = myX - myLg,
+       y = myY,
+       iDist = 0;
+   Entity *entity = NULL;
+
+   //x++;
+   do{
+
+      if (x < 0)
+         x = mParam->cellX + x;
+
+
+      entity = getGrid()->getGrid(x, y);
+      if (entity == EMPTY)
+      {
+          iDist++;
+          x--;
+      }
+   } while  (entity == EMPTY);
+
+
+   *out = iDist;
+
+   return entity;
+
+
+
+}
+
+/*
+ * It is a method that depends on what king of information I would show.
+ * It means: I can see on the screen or saved into a file.
+ */
+void TModel::debug(int time){
+   /*
+   cerr << "Time = " << time << endl;
+   for (int j = 0; j < getParam()->cellY; j++){
+      for (int i = 0; i < getParam()->cellX;  i++){
+               int idx = getGrid()->getGrid(i, j);
+         if (idx > EMPTY){
+               Vehicle *pVehicle    = getGrid()->getVehiclePointer(idx);
+               cerr << pVehicle->ID << "," << pVehicle->x << " , " << (int) pVehicle->y << endl;
+
+         }
+      }
+   }
+   cerr << "--------------------------------------------------------------------------------------------";
+   cerr << endl;
+   */
+}
+
+
+int TModel::truncCurve3(double v){
+    int result = static_cast<int> (floor(v+0.5f));
+
+
+    return result;
+
+}
+
+
+
+
+double  TModel::betaFunction (double gamaAlpha,
+                                    double gamaBeta,
+                                    double gamaAlphaBeta,
+                                    double alpha,
+                                    double beta,
+                                    double x){
+
+
+	double  xalpha = pow(x, (alpha-1.0f)),
+                xbeta  = pow((1.0f - x), (beta-1.0f));
+
+	double ret = gamaAlphaBeta / (gamaAlpha * gamaBeta);
+
+    ret *= xalpha * xbeta;
+
+    return ret;
+}
+
+double  TModel::betaFunction (double *vet){
+
+	double x, y, y1;
+    do{
+        x  = static_cast <double> (rand() % 65535 + 1) / 65535.0f;
+        y1 = static_cast <double> (rand() % 65535 + 1) / 65535.0f;
+
+        y = betaFunction( vet[2],
+                         vet[3],
+                         vet[4],
+                         vet[0],
+                         vet[1],
+                         x);
+
+
+    }while (y1 > y);
+
+    if (x < 0.0f)
+        x = 0.0f;
+
+    if (x > 1.0f)
+        x = 1.0f;
+
+    return x;
+
+}
+
+
+void TModel::buildCluster(Vehicle *vehicle){
+
+        Vehicle *pVehicle = vehicle;
+        Vehicle *bVehicle = NULL;
+        Entity *backPtr = NULL;
+
+        int iDist = 0,
+            iVel  = 0;
+
+        do{
+         backPtr = getBack(&iDist, pVehicle->x, pVehicle->y, pVehicle->lg);
+
+
+
+         if (backPtr->whoAmI().compare("Vehicle") != 0)
+            return;
+
+         bVehicle = static_cast<Vehicle *> (backPtr);
+
+         iVel = bVehicle->vxNew;
+         iDist += pVehicle->vxNew;
+
+         if (iVel > iDist){
+
+            insertIntoCluster(bVehicle);
+         }
+
+         pVehicle = bVehicle;
+         bVehicle = NULL;
+
+      }while (iVel > iDist);
+
+
+
+}
+
+
+
+
+
+void TModel::solveCluster(Vehicle *vehicle){
+  movementRules(vehicle, true);
+
+  if (mStatistic)
+      mReAjusted++;
+}
+
+void TModel::insertIntoCluster(Vehicle *vehicle){
+   tpCluster *cluster =  new tpCluster();
+
+   cluster->vehicle = vehicle;
+   cluster->next = NULL;
+
+   tpCluster *ptr = mClusters;
+
+   if (mClusters == NULL){
+      mClusters = cluster;
+      return;
+   }
+
+   while (ptr->next != NULL){
+      ptr = ptr->next;
+   }
+
+   ptr->next = cluster;
+
+}
+
+
+
+
+
+void TModel::insertIntoRedLights(Vehicle *vehicle){
+   tpCluster *cluster =  new tpCluster();
+   cluster->vehicle = vehicle;
+   cluster->next = NULL;
+
+   tpCluster *ptr = mRedLights;
+
+   if (mRedLights == NULL){
+      mRedLights = cluster;
+      return;
+   }
+
+   while (ptr->next != NULL){
+      ptr = ptr->next;
+   }
+
+   ptr->next = cluster;
+
+}
+
+
+float TModel::getRandom(void)
+{ return static_cast <float> (rand() % 10000 + 1) / 10000.0f;};
+
+
+float TModel::alphaFunction(float a)
+{ return 1.0f-a; }; ///*powf((1-a), 2);*/ };
+
+void TModel::saveLog(string msg){
+    fstream log;
+    log.open("Log.txt", fstream::out | fstream::app);
+    log << msg << endl;
+
+    log.close();
+
+}
+
+
+double gamaFunction (double n){
+
+    unsigned long in1 = static_cast <unsigned long> (n-1),
+    iacc = in1;
+
+    if (n <= 2.0f) return 1.0f;
+
+    for (unsigned long i = in1-1 ; i > 0 ; i--)
+        iacc *= i;
+
+    return static_cast <double> (iacc);
+}

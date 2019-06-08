@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<simulation>
+    <scenario>SL-STANDARD-HR-1.5-PAPER</scenario>
+    
+    <road-mesh>
+        <name>highway</name>
+        <max-speed>25</max-speed>
+        <size-x>10000</size-x>
+        <size-y>1</size-y>
+        <outflow>closed</outflow>
+        <inflow>closed</inflow>
+    </road-mesh>
+    
+    <discretization>1.5</discretization>>
+    <default-size>7.5</default-size>
+    <time-steps>10000</time-steps>
+    <transiente-steps>1000</transiente-steps>
+    <statistic-steps>120</statistic-steps>
+    <density>0.1|0.90|0.1</density>
+    <max-deceleration>3</max-deceleration>
+    <photo>true</photo>
+    <fixed>true</fixed>
+    <logCluster>false</logCluster>
+    
+    <profile>
+        <name>STANDARD</name>
+        <occupation>1.0</occupation>
+        <beta>9|7</beta>
+        <inc>4</inc>
+        <dec>1</dec>
+        <len>5</len>
+        <max-speed>25</max-speed>
+        <left-p>1.0</left-p>
+        <right-p>1.0</right-p>
+
+    </profile>
+
+</simulation>
