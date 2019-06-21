@@ -184,7 +184,7 @@ void TModel::finalCondition(void){
 }
 
 
-void TModel::applyRules(int step,  bool changing){
+void TModel::applyRules(int step){
 
 
 
@@ -237,7 +237,7 @@ void TModel::applyRules(int step,  bool changing){
 
 
 
-   update(step,  changing);
+   update(step,  false);
 
 
 
@@ -785,7 +785,8 @@ void TModel::saveLog(string msg){
     // 1 - right
     //////////////////////////////////
 */
-TModel_ML_SYM::TModel_ML_SYM(){
+TModel_ML_SYM::TModel_ML_SYM():
+TModel(){
     //mIndexDensity(0){
 };
 
@@ -799,9 +800,9 @@ TModel_ML_SYM::~TModel_ML_SYM(){
 /**
  * Apply symmetric rules or simple ahead movement based on T_UFRRJ
  */
-void TModel_ML_SYM::applyRules(int step, bool changing){
+void TModel_ML_SYM::applyRules(int step){
 
-    if (changing){
+
       Entity *pEntity = getGrid()->getEntities();
       while (pEntity != NULL){
            if (pEntity->whoAmI().compare("Vehicle") == 0){
@@ -809,8 +810,9 @@ void TModel_ML_SYM::applyRules(int step, bool changing){
            }
           pEntity = pEntity->next;
       }
-    }else
-        TModel::applyRules(step, changing);
+      update(step,  true);
+
+      TModel::applyRules(step);
 
 
 }
@@ -1166,6 +1168,224 @@ void TModel_ML_SYM::finalizer(void){
     TModel::finalizer();
 
 }
+
+
+/**
+ * Apply symmetric rules or simple ahead movement based on T_UFRRJ
+ */
+TModel_ML_ASYM::TModel_ML_ASYM():
+TModel_ML_SYM(){
+    //mIndexDensity(0){
+};
+
+TModel_ML_ASYM::~TModel_ML_ASYM(){
+};
+
+void TModel_ML_ASYM::changeLaneRules(Vehicle **ppVehicle){
+    tpVehiclesType *type = (*ppVehicle)->type;
+
+    bool changed = false;
+    bool bestFlow = rule_BestFlow(ppVehicle, RIGHT2LEFT);
+
+    if(rule_MovingFaster(ppVehicle)  && !changed && bestFlow){
+        if (rule_Safe(ppVehicle, RIGHT2LEFT)){
+            if (getRandom() <= type->left_p){
+
+                (*ppVehicle)->vy = -1;
+                changed = true;
+
+
+            }//end-if (getRandom() < type->left_p){
+        }//end-if (r05_Change(idx, RIGHT2LEFT)){
+    }//end-if(r01_Motivated(idx) && !changed ){
+
+
+    //bestFlow = rule_BestFlow(idx, LEFT2RIGHT);
+    if(rule_FasterBehind(ppVehicle) && !changed ){
+        if (rule_Safe(ppVehicle, LEFT2RIGHT)){
+            if (getRandom() <= type->right_p){
+                (*ppVehicle)->vy = +1;
+                changed = true;
+
+
+            }//end-if (getRandom() < type->left_p){
+        }//end-if (r05_Change(idx, RIGHT2LEFT)){
+    }//end-if(r01_Motivated(idx) && !changed ){
+
+
+   bestFlow = rule_BestFlow(ppVehicle, LEFT2RIGHT);
+    if(rule_FasterAhead(ppVehicle) && !changed && bestFlow){
+        if (rule_Safe(ppVehicle, LEFT2RIGHT)){
+            if (getRandom() <= type->right_p){
+                (*ppVehicle)->vy = +1;
+                changed = true;
+
+
+            }//end-if (getRandom() < type->left_p){
+        }//end-if (r05_Change(idx, RIGHT2LEFT)){
+    }//end-if(r01_Motivated(idx) && !changed ){
+}
+
+
+/*
+ * r03_Motivated rule makes drivers change to slower lane.
+ * r03_Motivated rule takes into account ahead vehicle.
+ * In case of Brazil, it is right lane.
+ */
+bool TModel_ML_ASYM::rule_FasterAhead(Vehicle **ppVehicle){
+
+   double   dVel = 0.0f,
+            dTH   = 0.0f,
+            deltaV    = 0.0f,
+            dheadway  = 0.0f,
+            dsafedist = 0.0f,
+//            deltaVMax = 50.0f,
+            ds = 0.0f,
+            alpha = 0.0f,
+            beta  = 0.0f;
+
+   int iVel = 0,
+       iDist = 0,
+       iAheadVel = 0,
+       iMax = 0;
+
+
+   tpVehiclesType *type = (*ppVehicle)->type;
+
+   alpha = betaFunction(type->param),
+   beta  = 1.0f;// - betaFunction(type->param + 5);
+
+   deltaV    =  (*ppVehicle)->type->inc;
+   dheadway  =  (*ppVehicle)->type->aheadInt;
+   dsafedist =   (*ppVehicle)->type->safeDist;
+
+   iMax = min(mParam->vMax, (*ppVehicle)->type->vMax);
+   getDistanceAndVelocity(*ppVehicle, &iDist, &iAheadVel);
+   if (iDist >= iMax)
+       return true;
+
+
+   dVel = static_cast<double> ((*ppVehicle)->vx) + ( (deltaV * alpha) - 0.5f);
+   //plot '2_4.txt' u (floor((4*$1)-0.5)):($2) w p
+   dVel = floor(dVel);
+
+   iVel = static_cast<int> (dVel);
+
+   iVel = max(iVel, 0);
+
+   iVel = min (iVel, iMax);
+
+   dVel = static_cast<double> (iVel);
+
+
+    if (fabs((dVel - static_cast<double>(iAheadVel))) <= ERROR)
+        return false;
+
+   dTH = static_cast<double>(iDist) / (dVel - static_cast<double> (iAheadVel)); //+ (deltaV * alpha));
+
+   if (( dTH >  0.0f) && (dTH <= (dheadway * beta))){
+    ds = (dsafedist * beta) ;//* dTH	;
+   }
+
+
+   assert(ds >= 0.0f);
+   iDist -= truncCurve3(ds);
+
+   if (iDist < 0)
+      iDist = 0;
+
+   if (iVel <= iDist)
+       return true;
+
+   return false;
+
+
+
+}
+
+/*
+ * Brief: back vehicle is getting closer, the analyzed one becomes
+ * motived to change the lane
+ */
+
+bool TModel_ML_ASYM::rule_FasterBehind(Vehicle **ppVehicle){
+    double   dVel = 0.0f,
+        dTH   = 0.0f,
+        deltaV    = 0.0f,
+        dheadway  = 0.0f,
+        dsafedist = 0.0f,
+//            deltaVMax = 50.0f,
+        ds = 0.0f,
+        alpha = 0.0f,
+        beta  = 0.0f;
+
+    //Veículo que vem detrás
+    Vehicle *vBackVehicle;
+
+    //Vehicle **ppVehicle  = &pVehicle;
+    tpVehiclesType *type = NULL;
+
+    int iVel       = 0,
+        //iBackVel   = 0,
+        iBackDist  = 0,
+        iMax = 0;
+
+    Entity *entity = getBack(&iBackDist, (*ppVehicle)->x,  (*ppVehicle)->y, (*ppVehicle)->lg);
+
+    if (entity->whoAmI().compare("Vehicle") == 0){
+      vBackVehicle = (Vehicle*) entity;
+
+      type = vBackVehicle->type;
+
+       iMax = min(mParam->vMax, type->vMax);
+
+      alpha = betaFunction(type->param),
+      beta  = 1.0f; // - betaFunction(type->param + 5);
+
+      deltaV    =  type->inc;
+      dheadway  =  type->aheadInt;
+      dsafedist =   type->safeDist;
+
+      dVel = static_cast<double> (vBackVehicle->vx) + ( (deltaV * alpha) -   0.5f);
+
+      dVel = floor(dVel);
+
+      iVel = static_cast<int> (dVel);
+
+      iVel = max(iVel, 0);
+
+      iVel = min (iVel, iMax);
+
+      dVel = static_cast<double> (iVel);
+      int auxv = (*ppVehicle)->vx;
+
+      if (fabs((dVel - static_cast<double>(auxv))) <= ERROR)
+          return false;
+
+      dTH = static_cast<double>(iBackDist) / (dVel - static_cast<double>(auxv)); //+ (deltaV * alpha));
+
+      if (( dTH >  0.0f) && (dTH <= (dheadway * beta))){
+       ds = (dsafedist * beta) ;//* dTH	;
+      }
+
+
+     assert(ds >= 0.0f);
+     iBackDist -= truncCurve3(ds);
+
+     if (iBackDist < 0)
+        iBackDist = 0;
+
+     if (iVel > iBackDist)
+         return true;
+
+     return false;
+    }
+    return false;
+
+
+}
+
+
 //--------- Functions
 double gamaFunction (double n){
 

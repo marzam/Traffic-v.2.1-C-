@@ -38,8 +38,8 @@ CellularAutomata::~CellularAutomata()
 void CellularAutomata::initDefault(void){
 
     mParam.modelName = "DefaultModel";
-    mRules = new TModel();
-    mRules = new TModel_ML_SYM();
+    //mRules = new TModel();
+    mRules = new TModel_ML_ASYM();
     mRules->setParam(&mParam);
     mRules->setSensor(&mSensor);
     mRules->setGrid(&mGrid);
@@ -49,7 +49,7 @@ void CellularAutomata::initDefault(void){
     mParam.spacePerception = 12;
     mParam.vMax = 25;
     mParam.cellX = 10000;
-    mParam.cellY = 1;
+    mParam.cellY = 2;
     mParam.deltaH = 1.5f;
     mParam.defaultSize = 7.5;
     mParam.sTime = 3600 * 5;
@@ -80,6 +80,8 @@ void CellularAutomata::initDefault(void){
     mRules->getGrid()->getVehicleType(0)->desc = 1;
     mRules->getGrid()->getVehicleType(0)->size = 5;
     mRules->getGrid()->getVehicleType(0)->vMax = 25;
+    mRules->getGrid()->getVehicleType(0)->aheadInt = 6.0;
+    mRules->getGrid()->getVehicleType(0)->safeDist = 2.0f;
     mRules->getGrid()->getVehicleType(0)->left_p = 1.0f;
     mRules->getGrid()->getVehicleType(0)->right_p = 1.0f;
     mRules->getGrid()->getVehicleType(0)->param[2] = gamaFunction(mRules->getGrid()->getVehicleType(0)->param[0]);
@@ -124,6 +126,8 @@ void CellularAutomata::initDefault(void){
         << "Percent: " << fixed << setprecision(2) << type->percent \
         << " Size: " << type->size \
         << " vMax: " << type->vMax \
+        << " Aheadway: " << type->aheadInt \
+        << " Safe dist.: " << type->safeDist \
         << " Alpha parameter ACC(" << setprecision(0) << type->param[0] << ", " << type->param[1] << ") "
                   << " Inc: " << setprecision(0) << type->inc \
         << " Desc: " << type->desc \
