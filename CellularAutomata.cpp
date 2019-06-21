@@ -39,6 +39,7 @@ void CellularAutomata::initDefault(void){
 
     mParam.modelName = "DefaultModel";
     mRules = new TModel();
+    mRules = new TModel_ML_SYM();
     mRules->setParam(&mParam);
     mRules->setSensor(&mSensor);
     mRules->setGrid(&mGrid);
@@ -306,4 +307,3 @@ void CellularAutomata::debug(int time){
 
 
 };
-

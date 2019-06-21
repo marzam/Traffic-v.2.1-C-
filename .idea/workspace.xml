@@ -10,6 +10,44 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dd8ec121-8787-46cc-9752-3e3710381b38" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/TS-CA-v2.0.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/App.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/CellularAutomata.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/CellularAutomata.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Entity.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Entity.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Grid.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Grid.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Makefile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ModelTypes.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/MovementSensor.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/MovementSensor.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/SL-STANDARD-HR-1.5-PAPER.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/TModel.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/TModel.cpp.001" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/TModel.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/TModel.hpp.001" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/TModelCA" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-DARING-HR-1.5-PAPER-BLOCKED.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-DARING-HR-1.5-PAPER.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-SLOW-HR-1.5-PAPER-BLOCKED.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-SLOW-HR-1.5-PAPER.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-STANDARD-02-HR-1.5-PAPER-BLOCKED.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-STANDARD-02-HR-1.5-PAPER.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-STANDARD-HR-1.5-PAPER-BLOCKED.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-STANDARD-HR-1.5-PAPER.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/SL-default.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/profiles.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/graphics.plt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stopped-vehicles.plt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/template.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/velocity-dp.plt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../TS-CA-MPI/App.hpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../TS-CA-MPI/CellularAutomata.cpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../TS-CA-MPI/CellularAutomata.hpp" beforeDir="false" />
@@ -395,7 +433,7 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/MovementSensor.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1026" />
+            <state relative-caret-position="-2166" />
           </provider>
         </entry>
       </file>
@@ -457,7 +495,7 @@
     </replaceStrings>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
@@ -499,6 +537,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
@@ -532,12 +571,12 @@
       <workItem from="1559770132627" duration="3698000" />
       <workItem from="1559826782221" duration="5054000" />
       <workItem from="1559916341505" duration="124000" />
-      <workItem from="1559950017768" duration="3221000" />
+      <workItem from="1559950017768" duration="3733000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="12228000" />
+    <option name="totallyTimeSpent" value="12740000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-3" y="0" width="2566" height="1083" extended-state="6" />
@@ -635,7 +674,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/MovementSensor.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1026" />
+        <state relative-caret-position="-2166" />
       </provider>
     </entry>
   </component>

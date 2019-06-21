@@ -50,7 +50,7 @@ public:
     float getCellXf(void){ return static_cast <float> (cellX); }
     float getCellYf(void){ return static_cast <float> (cellY); }
     int getID(void) { return iID++; }
-     uintptr_t * getGrid(void){ return grid; }
+    uintptr_t * getGrid(void){ return grid; }
 
 
 public:
