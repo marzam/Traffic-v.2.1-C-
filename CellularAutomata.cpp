@@ -16,11 +16,15 @@
 #include <climits>
 #include <thread>
 using namespace std;
-
+/*
+ * #include <thread>
+ * unsigned int nthreads = std::thread::hardware_concurrency();
+ */
 /*
  *
  */
 CellularAutomata::CellularAutomata():
+pThreadClass::pThreadClass(),
 mRules(NULL),
 mState(0),
 mRunning(true),
@@ -39,7 +43,7 @@ void CellularAutomata::initDefault(void){
 
     mParam.modelName = "DefaultModel";
     //mRules = new TModel();
-    mRules = new TModel_ML_ASYM();
+    mRules = new TModel_ML_SYM();
     mRules->setParam(&mParam);
     mRules->setSensor(&mSensor);
     mRules->setGrid(&mGrid);
@@ -311,3 +315,19 @@ void CellularAutomata::debug(int time){
 
 
 };
+void*CellularAutomata::execThread(void){
+  cout << "Hello" << endl;
+};
+
+/*
+* Master class that managers threads
+*
+*/
+
+MasterCellularAutomata::MasterCellularAutomata(void)
+{}
+
+MasterCellularAutomata::~MasterCellularAutomata(void)
+{
+//  pThreadClass::~pThreadClass();
+}

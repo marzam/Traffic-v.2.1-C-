@@ -1,0 +1,1 @@
+plot 'Documents/traffic/statistic.fixed.DefaultModel.txt' u 4:3 w p,'Documents/traffic/statistic.fixed.DefaultModel.txt' u 7:6 w p, 'Documents/traffic-async/statistic.fixed.DefaultModel.txt' u 4:3, 'Documents/traffic-async/statistic.fixed.DefaultModel.txt' u 7:6

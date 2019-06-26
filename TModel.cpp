@@ -948,7 +948,7 @@ bool TModel_ML_SYM::rule_Safe(Vehicle **ppVehicle, int iDir){
     {
         type = vBackVehicle->type;
         //double alpha     = betaFunction(type->param);
-        double beta      = 1.0f; //1.0f - betaFunction(type->param + 5);
+        double beta      = 1.0f - betaFunction(type->param);
         double dheadway  =  type->aheadInt;
 
         int diffV = vBackVehicle->vx - iVel;
@@ -981,7 +981,7 @@ bool TModel_ML_SYM::rule_Safe(Vehicle **ppVehicle, int iDir){
     {
         type = (*ppVehicle)->type;
         //double alpha     = betaFunction(type->param);
-        double beta      = 1.0f; // - betaFunction(type->param + 5);
+        double beta      = 1.0f - betaFunction(type->param);
         double dheadway  =  type->aheadInt;
 
         int diffV = iVel - vAheadVehicle->vx;
@@ -1031,7 +1031,7 @@ bool TModel_ML_SYM::rule_MovingFaster(Vehicle **ppVehicle){
    tpVehiclesType *type = (*ppVehicle)->type;
 
    alpha = betaFunction(type->param),
-   beta  = 1.0f;// - betaFunction(type->param + 5);
+   beta  = 1.0f - betaFunction(type->param);
 
    deltaV    =  (*ppVehicle)->type->inc;
    dheadway  =  (*ppVehicle)->type->aheadInt;
@@ -1253,7 +1253,7 @@ bool TModel_ML_ASYM::rule_FasterAhead(Vehicle **ppVehicle){
    tpVehiclesType *type = (*ppVehicle)->type;
 
    alpha = betaFunction(type->param),
-   beta  = 1.0f;// - betaFunction(type->param + 5);
+   beta  = 1.0f - betaFunction(type->param);
 
    deltaV    =  (*ppVehicle)->type->inc;
    dheadway  =  (*ppVehicle)->type->aheadInt;
@@ -1340,7 +1340,7 @@ bool TModel_ML_ASYM::rule_FasterBehind(Vehicle **ppVehicle){
        iMax = min(mParam->vMax, type->vMax);
 
       alpha = betaFunction(type->param),
-      beta  = 1.0f; // - betaFunction(type->param + 5);
+      beta  = 1.0f - betaFunction(type->param);
 
       deltaV    =  type->inc;
       dheadway  =  type->aheadInt;

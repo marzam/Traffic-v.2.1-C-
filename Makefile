@@ -12,14 +12,14 @@
 EXEFILE      = TModelCA
 VERSION      = -D_VERSION=\"0.1\"
 APPLICATION  = -D_APPLICATION=\"$(EXEFILE)\"
-CPUCC     = /opt/intel/bin/icpc
+CPUCC     = g++ #/opt/intel/bin/icpc
 #CPUCC     = /usr/bin/g++-7
 #CPUCC     = g++
-CPPFLAGS  = --std=c++11 -m64 -Wno-reorder #     -Wunused-variable #-Wno-conversion-null -Wdelete-non-virtual-dtor
+CPPFLAGS  = --std=c++14 -m64 -Wno-reorder #     -Wunused-variable #-Wno-conversion-null -Wdelete-non-virtual-dtor
 DEFS      = $(APPLICATION)  $(VERSION) -DALIGN=64
 INCLUDES  =	-I. -I/usr/include/x86_64-linux-gnu/
 LIBDIR   = -L/usr/lib
-LIBS     =  -lm
+LIBS     =  -lm -lpthread
 LINK     =  $(LIBDIR) $(LIBS)
 CPU_COMPILE = $(CPUCC) $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
@@ -36,19 +36,21 @@ else
   CPPFLAGS += -g -Wall -O0
 endif
 
-all:	Grid 			\
-	TModel                  \
-        CellularAutomata 	\
-        MovementSensor		\
-	Entity 		        \
-	main
+all:	Grid 				  	 \
+	    TModel            \
+	    pThreadClass      \
+      CellularAutomata 	\
+      MovementSensor		\
+	    Entity 		        \
+	    main
 
 	$(CPU_COMPILE)  Grid.o             \
-			TModel.o           \
-			CellularAutomata.o \
-			MovementSensor.o   \
-			Entity.o           \
-			main.o             \
+			            TModel.o           \
+			            pThreadClass.o      \
+			            CellularAutomata.o \
+			            MovementSensor.o   \
+		            	Entity.o           \
+			            main.o             \
 	$(LINK) -o $(EXEFILE)
 
 main:
@@ -69,6 +71,11 @@ MovementSensor:
 
 CellularAutomata:
 	$(CPU_COMPILE) -c CellularAutomata.cpp
+
+pThreadClass:
+	$(CPU_COMPILE) -c pThreadClass.cpp
+
+
 
 clean:
 	rm -rf *.o

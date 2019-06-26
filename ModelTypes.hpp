@@ -30,7 +30,7 @@ struct tpVehiclesType
     float      percent;
     int        size;
     int        vMax;
-    double     param[10];
+    double     param[5];
     double     aheadInt;  //Vehicle aheadway used on multilane model
     double     safeDist;  //Safe
     double     inc;

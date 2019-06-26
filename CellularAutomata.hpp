@@ -14,7 +14,7 @@
 #include <MovementSensor.hpp>
 #include <ModelTypes.hpp>
 #include <Grid.hpp>
-
+#include <pThreadClass.hpp>
 
 /*
  *  CellularAutomata.h
@@ -28,12 +28,12 @@
 
 using namespace std;
 
-class CellularAutomata
+class CellularAutomata: public pThreadClass
 {
 
 public:
     CellularAutomata();
-    ~CellularAutomata();
+    virtual ~CellularAutomata();
     void initDefault(void);
     void update(void);
 
@@ -44,6 +44,7 @@ public:
 
     bool  isRunning (void) {return mRunning; };
 
+    virtual void* execThread(void);
 
 protected:
 
@@ -57,5 +58,14 @@ protected:
    tpParam                          mParam;
    Stopwatch                        mStopwatch;
    TModel                           *mRules;
+};
+
+class MasterCellularAutomata
+{
+public:
+  MasterCellularAutomata(void);
+  ~MasterCellularAutomata(void);
+protected:
+
 };
 #endif
