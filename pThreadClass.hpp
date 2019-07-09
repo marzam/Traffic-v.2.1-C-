@@ -34,7 +34,7 @@ class pThreadClass
 
 		pthread_mutex_t   *m_Mutex;
 		pthread_cond_t    *m_Cond;
-        pthread_barrier_t *m_Barrier;
+    pthread_barrier_t *m_Barrier;
 
    protected:
       pthread_t mThreadId;

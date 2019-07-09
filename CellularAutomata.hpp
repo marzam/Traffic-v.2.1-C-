@@ -15,6 +15,7 @@
 #include <ModelTypes.hpp>
 #include <Grid.hpp>
 #include <pThreadClass.hpp>
+#include <thread>
 
 /*
  *  CellularAutomata.h
@@ -46,26 +47,39 @@ public:
 
     virtual void* execThread(void);
 
+
+
 protected:
 
-   bool                             mRunning;
    int                              mState;
    int                              mpStep;
    int                              mStep;
    float                            mdGlobal;
-   Grid                             mGrid;
-   MovementSensor                   mSensor;
-   tpParam                          mParam;
+
    Stopwatch                        mStopwatch;
    TModel                           *mRules;
+
+//Parallel approach
+   Grid                             *mGrid;
+   tpParam                          *mParam;
+   MovementSensor                   *mSensor;
+
 };
 
 class MasterCellularAutomata
 {
 public:
-  MasterCellularAutomata(void);
+  MasterCellularAutomata(tpParam, int = 0);
   ~MasterCellularAutomata(void);
+  void parallelUpdate(void);
 protected:
+  CellularAutomata                  *mPCA;
+  pthread_barrier_t                 m_Barrier;
+  unsigned int                      mNumberOfThreads;
+  Grid                              mGrid;
+  tpParam                           mParam;
+  MovementSensor                    mSensor;
+
 
 };
 #endif

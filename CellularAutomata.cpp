@@ -27,7 +27,6 @@ CellularAutomata::CellularAutomata():
 pThreadClass::pThreadClass(),
 mRules(NULL),
 mState(0),
-mRunning(true),
 mpStep(0),
 mdGlobal(0.0f)
 { cout << "\nStarting application" << endl; }
@@ -41,40 +40,20 @@ CellularAutomata::~CellularAutomata()
 
 void CellularAutomata::initDefault(void){
 
-    mParam.modelName = "DefaultModel";
+    if (mParam->modelName.compare ("TModel_ML_SYM") == 0)
+      mRules = new TModel_ML_SYM();
+
+    assert(mRules != NULL);
     //mRules = new TModel();
-    mRules = new TModel_ML_SYM();
-    mRules->setParam(&mParam);
-    mRules->setSensor(&mSensor);
-    mRules->setGrid(&mGrid);
+    mRules->setParam(mParam);
+    mRules->setSensor(mSensor);
+    mRules->setGrid(mGrid);
 
-    mParam.logVehicles = 0;
-    mParam.deceleration = 3;
-    mParam.spacePerception = 12;
-    mParam.vMax = 25;
-    mParam.cellX = 10000;
-    mParam.cellY = 2;
-    mParam.deltaH = 1.5f;
-    mParam.defaultSize = 7.5;
-    mParam.sTime = 3600 * 5;
-    mParam.dTime = 3600;
-    mParam.stTime = 120;
-    mParam.iDensity = 0.01f;
-    mParam.dDensity = 0.01f;
-    mParam.fDensity = 0.95f;
-    mParam.photo = true;
-    mParam.fixed = true;
-    mParam.logCluster = true;
-    mParam.nProfiles = 1;
 
-    mRules->getGrid()->allocVehicleType(mParam.nProfiles);
+
+    mRules->getGrid()->allocVehicleType(mParam->nProfiles);
     mRules->getGrid()->getVehicleType(0)->percent = 1.0f;
     mRules->getSensor()->setSaveFiles(mRules->getParam()-> photo, mRules->getParam()->fixed);
-
-    assert(posix_memalign((void**) &mGrid.grid, ALIGN, mParam.cellX * mParam.cellY *  8) == 0);
-    mGrid.allocGrid(mParam.cellX, mParam.cellY);
-
-
 
     memset( mRules->getGrid()->getVehicleType(0)->param, 0x00, sizeof(double) * 5 ); //It indicates the number of parameters of beta function. Considering two policy (acceleration and safe distance)/
     strcpy(mRules->getGrid()->getVehicleType(0)->description, "Default");
@@ -316,7 +295,11 @@ void CellularAutomata::debug(int time){
 
 };
 void*CellularAutomata::execThread(void){
-  cout << "Hello" << endl;
+  cout << "Waiting...." << endl;
+  pthread_barrier_wait(m_Barrier);
+  cout << "Hello, I'm thread: " << mMyThread << endl;
+  cout.flush();
+  pthread_barrier_wait(m_Barrier);
 };
 
 /*
@@ -324,10 +307,41 @@ void*CellularAutomata::execThread(void){
 *
 */
 
-MasterCellularAutomata::MasterCellularAutomata(void)
-{}
+MasterCellularAutomata::MasterCellularAutomata(tpParam param, int t){
+  mParam = param;
+
+  assert(posix_memalign((void**) &mGrid.grid, ALIGN, mParam.cellX * mParam.cellY *  8) == 0);
+  mGrid.allocGrid(mParam.cellX, mParam.cellY);
+
+  if (t == 0)
+    mNumberOfThreads = thread::hardware_concurrency();
+  else
+   mNumberOfThreads = t;
+
+  cout << "\nNumber of threads: " << mNumberOfThreads << endl;
+//  assert(posix_memalign((void**) &mPCA, ALIGN, mNumberOfThreads * sizeof(CellularAutomata)) == 0);
+  mPCA = new CellularAutomata[mNumberOfThreads];
+  assert(pthread_barrier_init(&m_Barrier, NULL, mNumberOfThreads + 1) == 0);
+
+  for (int i = 0; i < mNumberOfThreads; i++){
+     //mVetThread[i] = pThreadClass();
+     mPCA[i].m_Barrier = &m_Barrier;
+     mPCA[i].create();
+  }
+
+  cin.get();
+  pthread_barrier_wait(&m_Barrier);
+  cin.get();
+  pthread_barrier_wait(&m_Barrier);
+  for (int i = 0; i < mNumberOfThreads; i++)
+           mPCA[i].wait();
+}
 
 MasterCellularAutomata::~MasterCellularAutomata(void)
 {
+  cout << "MasterCellularAutomata::~MasterCellularAutomata(void)" << endl;
+  delete[] mPCA;
+  free(mGrid.grid);
+  assert(pthread_barrier_destroy(&m_Barrier) == 0);
 //  pThreadClass::~pThreadClass();
 }
