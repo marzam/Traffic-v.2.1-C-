@@ -12,7 +12,7 @@
 #include <cstring>
 #include <fstream>
 #include <climits>
-#include <MovementSensor.hpp>
+// #include <MovementSensor.hpp>
 using namespace std;
 
 
@@ -60,7 +60,7 @@ Entity(),
  type(NULL),
  yChange(false),
  mLights(false),
- mSensor(NULL),
+//  mSensor(NULL),
  mCount(0),
  save(false),/* Log vehicle infomation */
  mDV(0),
@@ -135,7 +135,7 @@ void Vehicle::update(bool statistic, int time){
         //oid MovementSensor::setCellInMovement(int cells, int velocity, int y){
         assert(passed >= 1);
         assert(passed <= lg);
-        mSensor->setCellInMovement(passed, ivl, y, this);
+//         mSensor->setCellInMovement(passed, ivl, y, this);
         mCount += passed;
 
 

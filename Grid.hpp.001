@@ -60,7 +60,7 @@ public:
     Entity *entities;
     //Entity  **entity;    /* <! Any other entity in latticle such as blocked cells or traffic light > */
 
-   uintptr_t *grid;
+   
 //    Entity  **grid;      /* <! grid represention > */
 
 

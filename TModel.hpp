@@ -5,10 +5,8 @@
 #include <iomanip>
 #include <fstream>
 #include <cmath>
-#include <Grid.hpp>
 #include <MovementSensor.hpp>
 using namespace std;
-double gamaFunction (double n);
 
 
 class TModel

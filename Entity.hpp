@@ -47,7 +47,7 @@ public:
 };
 
 
-class MovementSensor;
+//class MovementSensor;
 class Vehicle: public Entity {
 public:
    Vehicle();
@@ -89,7 +89,7 @@ public:
     int mDV;              /*<! Velocity difference between this vehicle and his ahead one */
     int mDIST;            /*<! Distance between this vehicle and his ahead one */
 
-    MovementSensor *mSensor;
+//     MovementSensor *mSensor;
     char mFileSufix[64];
 };
 

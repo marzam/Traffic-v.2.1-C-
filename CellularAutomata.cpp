@@ -24,11 +24,11 @@ using namespace std;
  *
  */
 CellularAutomata::CellularAutomata():
-pThreadClass::pThreadClass(),
-mRules(NULL),
-mState(0),
-mpStep(0),
-mdGlobal(0.0f)
+pThreadClass::pThreadClass()
+// mRules(NULL),
+// mState(0),
+// mpStep(0),
+// mdGlobal(0.0f)
 { cout << "\nStarting application" << endl; }
 
 /*
@@ -39,7 +39,7 @@ CellularAutomata::~CellularAutomata()
 
 
 void CellularAutomata::initDefault(void){
-
+/*
     if (mParam->modelName.compare ("TModel_ML_SYM") == 0)
       mRules = new TModel_ML_SYM();
 
@@ -116,14 +116,14 @@ void CellularAutomata::initDefault(void){
         << " Desc: " << type->desc \
         << " Left prob.:" <<   setprecision(2) << type->left_p << " Right prob." << type->right_p \
         << std::endl;
-        /*
+        
         if (type->vehicleLog){
                 std::cout << "\t Vehicle range: " << type->lo_ID << "," << type->hi_ID << " file sufix: " << type->sufix << std::endl;
         }
-        */
     }
     std::cout.flush();
-
+      */
+  
 
 
 
@@ -135,12 +135,12 @@ void CellularAutomata::initDefault(void){
  * It also saves log file
  */
 void CellularAutomata::finalize(void){
-
+/*
     mRules->getGrid()->clearMemories();
     mRules->finalizer();
     if (mRules != NULL)
         delete mRules;
-
+*/
 };
 
 /*
@@ -148,7 +148,7 @@ void CellularAutomata::finalize(void){
  */
 
 void CellularAutomata::update(void){
-
+/*
     if (mState == 0){
 
 
@@ -235,20 +235,22 @@ void CellularAutomata::update(void){
         return;
     }//end-if (mState == 3){
 
-
+*/
 
 
 
 };
 
 void CellularAutomata::debugAllVehicles(void){
-    Entity *pEntity = mRules->getGrid()->getEntities();
+/*
+  Entity *pEntity = mRules->getGrid()->getEntities();
     while (pEntity != NULL){
         std::cerr << "V1(ID= " << pEntity->ID << ",X= "
             <<  pEntity->x  << ",Y= "
             <<  pEntity->y  << std::endl;
         pEntity = pEntity->next;
     }
+    */
 }
 
 /*
@@ -257,7 +259,8 @@ void CellularAutomata::debugAllVehicles(void){
  */
 void CellularAutomata::debug(int time){
 //     return;
-    fstream dLog;
+ /*  
+  fstream dLog;
     dLog.open("Debug.log", fstream::out | fstream::app);
     assert(dLog.is_open());
     dLog << "[" << time << "]";
@@ -291,7 +294,7 @@ void CellularAutomata::debug(int time){
     }
     dLog << endl;
     dLog.close();
-
+*/
 
 };
 void*CellularAutomata::execThread(void){
@@ -300,18 +303,21 @@ void*CellularAutomata::execThread(void){
   cout << "Hello, I'm thread: " << mMyThread << endl;
   cout.flush();
   pthread_barrier_wait(m_Barrier);
+  return NULL;
 };
 
 /*
 * Master class that managers threads
 *
 */
-
-MasterCellularAutomata::MasterCellularAutomata(tpParam param, int t){
+// Including an array of behaviors comming from external call !!!
+MasterCellularAutomata::MasterCellularAutomata(tpParam param, tpVehiclesType *vt, int vtsize, int t):
+mGrid(NULL),
+mVehiclesType(NULL)
+{
   mParam = param;
 
-  assert(posix_memalign((void**) &mGrid.grid, ALIGN, mParam.cellX * mParam.cellY *  8) == 0);
-  mGrid.allocGrid(mParam.cellX, mParam.cellY);
+
 
   if (t == 0)
     mNumberOfThreads = thread::hardware_concurrency();
@@ -322,8 +328,27 @@ MasterCellularAutomata::MasterCellularAutomata(tpParam param, int t){
 //  assert(posix_memalign((void**) &mPCA, ALIGN, mNumberOfThreads * sizeof(CellularAutomata)) == 0);
   mPCA = new CellularAutomata[mNumberOfThreads];
   assert(pthread_barrier_init(&m_Barrier, NULL, mNumberOfThreads + 1) == 0);
+  
+  if (mGrid != NULL)
+    free(mGrid);
+ 
+//Allocing memories
+   assert(posix_memalign((void**) &mGrid, ALIGN, mParam.cellX * mParam.cellY *  sizeof(uintptr_t)) == 0);
+   assert(mGrid != NULL);
 
-  for (int i = 0; i < mNumberOfThreads; i++){
+  mNumTypes = vtsize;
+
+  if (mVehiclesType != NULL){
+    free(mVehiclesType);
+  }
+
+  assert(posix_memalign((void**) &mVehiclesType, ALIGN, mNumTypes *  sizeof(tpVehiclesType)) == 0);
+  assert(mVehiclesType != NULL);
+   
+  mEntities = NULL;
+  
+
+  for (unsigned int i = 0; i < mNumberOfThreads; i++){
      //mVetThread[i] = pThreadClass();
      mPCA[i].m_Barrier = &m_Barrier;
      mPCA[i].create();
@@ -333,7 +358,7 @@ MasterCellularAutomata::MasterCellularAutomata(tpParam param, int t){
   pthread_barrier_wait(&m_Barrier);
   cin.get();
   pthread_barrier_wait(&m_Barrier);
-  for (int i = 0; i < mNumberOfThreads; i++)
+  for (unsigned int i = 0; i < mNumberOfThreads; i++)
            mPCA[i].wait();
 }
 
@@ -341,7 +366,120 @@ MasterCellularAutomata::~MasterCellularAutomata(void)
 {
   cout << "MasterCellularAutomata::~MasterCellularAutomata(void)" << endl;
   delete[] mPCA;
-  free(mGrid.grid);
+  
+  if (mGrid != NULL)  free(mGrid);
+  if (mVehiclesType != NULL)  free(mVehiclesType);
   assert(pthread_barrier_destroy(&m_Barrier) == 0);
 //  pThreadClass::~pThreadClass();
+}
+
+void MasterCellularAutomata::initialCondition(float dGlobal){
+    //Define how many vehicles will be on the road
+    Vehicle vehicle;
+/*
+ * Observation 2017, March 18th
+ * For each vehicle Verifying if it is in a list of log vehicles vehicleLog
+ * To do this: Verifying if there is a substring with the number.
+ *             Set true vehicle parameter
+ *             Put in Vehicle.cpp code to log the vehicle performance
+ *
+ */
+    int totalVehicles = 0,
+        *vehiclesTypes = new int[getGrid()->getVehiclesTypeSize()];
+    mStatistic = false;
+
+    for (int i = 0; i < getGrid()->getVehiclesTypeSize(); i++){
+        tpVehiclesType *type  = getGrid()->getVehicleType(i);
+
+        float dVehicle  = type->percent * dGlobal / static_cast<float> (type->size);
+
+        int   nVehicles = static_cast <int> (dVehicle * static_cast <float> (mParam->cellX));
+
+        if (nVehicles == 0) nVehicles = 1;
+
+        totalVehicles += nVehicles;
+
+        vehiclesTypes[i] = nVehicles;
+    }
+    totalVehicles *= mParam->cellY;
+
+    getGrid()->clearMemories();
+
+    if (mParam->logVehicles > 0)
+      assert(posix_memalign((void**) &mLastVehicles, ALIGN, mParam->logVehicles *  sizeof(Vehicle*)) == 0);
+
+    int lIndex = 0;
+    for (int road = 0; road < mParam->cellY; road++){
+        int cell = 0;
+        for (int i = 0; i < getGrid()->getVehiclesTypeSize(); i++){
+            tpVehiclesType *type  = getGrid()->getVehicleType(i);
+            int length    = type->size;
+            int nVehicles = vehiclesTypes[i];
+            for(int iveicles = 0; iveicles < nVehicles; iveicles++){
+                Vehicle *vehicle = new Vehicle();
+
+                vehicle->ID = getGrid()->getID();
+
+                vehicle->x = cell + length - 1;
+                vehicle->vx = 0;
+                vehicle->vxNew = 0;
+                vehicle->y = road;
+                vehicle->vy = 0;
+                vehicle->yChange = false;
+                vehicle->mLights = false;
+                vehicle->lg = type->size;
+                vehicle->myDensity = dGlobal;
+                vehicle->mSensor = this->getSensor();
+                vehicle->next = NULL;
+                vehicle->prev = NULL;
+                vehicle->type = getGrid()->getVehicleType(i);
+                vehicle->defineLattice(mParam->cellX, mParam->cellY);
+                vehicle->save = false;
+                vehicle->mDV = 0;
+                vehicle->mDIST = 0;
+                vehicle->setFileSufix(mParam->modelName);
+                if (mParam->logVehicles > 0){
+                  if (iveicles >= (nVehicles - mParam->logVehicles)){
+                      vehicle->save = true;
+                      mLastVehicles[lIndex++] = vehicle;
+
+                  }//end-if (iveicles == (nVehicles - 1 - mParam->logVehicles)){
+                }//end-                if (mParam->logVehicles > 0){
+
+                getGrid()->addEntity(vehicle);
+                cell += length;
+
+            }
+
+        }
+    }
+
+
+    delete[] vehiclesTypes;
+    vehiclesTypes = NULL;
+
+
+    //Setting up sensor
+    mSensor->setFileName(mParam->modelName);
+    mSensor->setGrid(this->getGrid());
+    mSensor->reset();
+
+
+    mReAjusted = 0;
+
+
+
+}
+//--------- Functions
+double gamaFunction (double n){
+
+    unsigned long in1 = static_cast <unsigned long> (n-1),
+    iacc = in1;
+
+    if (n <= 2.0f) return 1.0f;
+
+    for (unsigned long i = in1-1 ; i > 0 ; i--)
+        iacc *= i;
+
+    return static_cast <double> (iacc);
 }

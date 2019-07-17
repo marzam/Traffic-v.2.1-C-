@@ -9,11 +9,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+
 #include <Entity.hpp>
-#include <TModel.hpp>
-#include <MovementSensor.hpp>
+// #include <TModel.hpp>
+// #include <MovementSensor.hpp>
 #include <ModelTypes.hpp>
-#include <Grid.hpp>
 #include <pThreadClass.hpp>
 #include <thread>
 
@@ -28,6 +28,7 @@
  */
 
 using namespace std;
+double gamaFunction (double n);
 
 class CellularAutomata: public pThreadClass
 {
@@ -51,35 +52,39 @@ public:
 
 protected:
 
-   int                              mState;
-   int                              mpStep;
-   int                              mStep;
-   float                            mdGlobal;
+//    int                              mState;
+//    int                              mpStep;
+//    int                              mStep;
+//    float                            mdGlobal;
 
    Stopwatch                        mStopwatch;
-   TModel                           *mRules;
+//    TModel                           *mRules;
 
 //Parallel approach
-   Grid                             *mGrid;
    tpParam                          *mParam;
-   MovementSensor                   *mSensor;
+//    MovementSensor                   *mSensor;
 
 };
 
 class MasterCellularAutomata
 {
 public:
-  MasterCellularAutomata(tpParam, int = 0);
+  MasterCellularAutomata(tpParam, tpVehiclesType *, int, int = 0);
   ~MasterCellularAutomata(void);
   void parallelUpdate(void);
+private:
+  void initialCondition(float);
+
 protected:
-  CellularAutomata                  *mPCA;
+  CellularAutomata                  *mPCA; /* <! parallel array of cellular automata > */
   pthread_barrier_t                 m_Barrier;
   unsigned int                      mNumberOfThreads;
-  Grid                              mGrid;
+  unsigned int                      mNumTypes;
   tpParam                           mParam;
-  MovementSensor                    mSensor;
-
+//   MovementSensor                    mSensor;
+  uintptr_t                         *mGrid;
+  Entity                            *mEntities;
+  tpVehiclesType                    *mVehiclesType;  /* <! Different kind of vehicles - data strucutre > */
 
 };
 #endif

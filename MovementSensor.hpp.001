@@ -1,7 +1,6 @@
 #ifndef _MOVEMENTSENSOR_HPP_
 #define _MOVEMENTSENSOR_HPP_
 #include <vector>
-#include <Grid.hpp>
 #include <ModelTypes.hpp>
 #include <string>
 #include <cstring>

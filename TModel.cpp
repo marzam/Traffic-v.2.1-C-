@@ -1386,16 +1386,3 @@ bool TModel_ML_ASYM::rule_FasterBehind(Vehicle **ppVehicle){
 }
 
 
-//--------- Functions
-double gamaFunction (double n){
-
-    unsigned long in1 = static_cast <unsigned long> (n-1),
-    iacc = in1;
-
-    if (n <= 2.0f) return 1.0f;
-
-    for (unsigned long i = in1-1 ; i > 0 ; i--)
-        iacc *= i;
-
-    return static_cast <double> (iacc);
-}

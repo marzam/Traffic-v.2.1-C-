@@ -72,9 +72,11 @@ struct tpParam
     int stTime;   //Statistic time
 
     int vMax;      //Max velocity
-    float iDensity; //Initial density
-    float fDensity; //Final density
-    float dDensity; //Delta density
+    float density; //current density
+    
+    //float iDensity; //Initial density
+    //float fDensity; //Final density
+//    float dDensity; //Delta density
 
 
     bool fixed;
